@@ -1,0 +1,59 @@
+{
+	auto_https {$AUTO_HTTPS}
+	skip_install_trust
+	admin off
+	log {
+		level {$LOG_LEVEL}
+		output stdout
+	}
+}
+
+(certificate) {
+	tls {$CERT_PATH}/wildcard.crt {$CERT_PATH}/wildcard.key
+}
+
+(basic-auth) {
+	basicauth * {
+		{$BASIC_USER} {$BASIC_PASSWORD}
+	}
+}
+
+(chatbot-ui) {
+	route /ping {
+		respond "Hello, Chatbot-ui!"
+	}
+
+	route * {
+		reverse_proxy chatbot-ui{$SERVICES_SUFFIX}:3000
+	}
+}
+
+(portainer) {
+	route /ping {
+		respond "Hello, Portainer!"
+	}
+
+	route * {
+		reverse_proxy portainer{$SERVICES_SUFFIX}:9000
+	}
+}
+
+http://chat.{$DOMAIN} {
+	import basic-auth
+	import chatbot-ui
+}
+
+https://chat.{$DOMAIN} {
+	import certificate
+	import basic-auth
+	import chatbot-ui
+}
+
+http://portainer.{$DOMAIN} {
+	import portainer
+}
+
+https://portainer.{$DOMAIN} {
+	import certificate
+	import portainer
+}

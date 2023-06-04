@@ -19,3 +19,10 @@
 
 # Go workspace file
 go.work
+
+# Tracks the .env to share general config. .override.env will be used to
+# override configuration, and will store secrects and so on
+.override.env
+
+# Not to track privates key
+*.key

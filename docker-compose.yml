@@ -1,0 +1,67 @@
+version: "3"
+
+services:
+  chatbot-ui:
+    image: ghcr.io/mckaywrigley/chatbot-ui:${CHATBOT_UI_VERSION}
+    restart: unless-stopped
+    container_name: chatbot-ui
+    ports:
+      - 3000:3000
+    env_file:
+      - ./config/chatbot-ui/.env
+      - ./config/chatbot-ui/.override.env
+    networks:
+      app-tier:
+    logging:
+        driver: ${CHATBOT_UI_LOG_DRIVER:-json-file}
+    
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    container_name: caddy
+    command: caddy run --config /etc/caddy/Caddyfile --adapter caddyfile --watch
+    ports:
+      - "${CADDY_HTTP_PORT}:80"
+      - "${CADDY_HTTPS_PORT}:443"
+    volumes:
+      - caddy:/data
+      - ./config/caddy/cert:/etc/ssl/private
+      - ./config/caddy/Caddyfile:/etc/caddy/Caddyfile
+    environment:
+      DOMAIN: ${DOMAIN}
+    env_file:
+      - ./config/caddy/.env
+      - ./config/caddy/.override.env
+    networks:
+      app-tier:
+    logging:
+      driver: ${CADDY_LOG_DRIVER:-json-file}
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - 9443:9443
+      - 9000:9000
+    volumes:
+      - portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - ./config/portainer/.env
+      - ./config/portainer/.override.env
+    restart: unless-stopped
+    networks:
+      app-tier:
+    logging:
+      driver: ${PORTAINER_LOG_DRIVER:-json-file}
+
+networks:
+  app-tier:
+    driver: bridge
+
+volumes:
+  caddy:
+    driver: local
+
+  portainer:
+    driver: local
